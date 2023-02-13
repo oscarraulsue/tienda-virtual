@@ -2,15 +2,18 @@ import type { NextPage } from 'next';
 import { Typography } from '@mui/material';
 
 import { ShopLayout } from '../components/layouts';
-import { initialData } from '../database/seed-data';
+
 import { ProductList } from '../components/products';
 import { useProducts } from '../hooks';
-import { FullScreenLoading } from '../components/ui/FullScreenLoading';
+
+import { FullScreenLoading } from '../components/ui';
 
 
-const Home: NextPage = () => {
+const HomePage: NextPage = () => {
+
 
   const { products, isLoading } = useProducts('/products');
+
 
   return (
     <ShopLayout title={'Teslo-Shop - Home'} pageDescription={'Encuentra los mejores productos de Teslo aquí'}>
@@ -23,9 +26,11 @@ const Home: NextPage = () => {
             : <ProductList products={ products } />
         }
 
+        
+    
 
     </ShopLayout>
   )
 }
 
-export default Home
+export default HomePage

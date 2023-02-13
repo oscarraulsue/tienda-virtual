@@ -7,6 +7,7 @@ import { CartContext, cartReducer } from './';
 
 export interface CartState {
     isLoaded: boolean;
+    isInitialState: boolean;
     cart: ICartProduct[];
     numberOfItems: number;
     subTotal: number;
@@ -31,6 +32,7 @@ export interface ShippingAddress {
 const CART_INITIAL_STATE: CartState = {
     isLoaded: false,
     cart: [],
+    isInitialState: true,
     numberOfItems: 0,
     subTotal: 0,
     tax: 0,
@@ -76,8 +78,8 @@ export const CartProvider:FC = ({ children }) => {
 
     
     useEffect(() => {
-      Cookie.set('cart', JSON.stringify( state.cart ));
-    }, [state.cart]);
+        !state.isInitialState && Cookie.set('cart', JSON.stringify( state.cart ));
+    }, [state.cart, state.isInitialState]);
 
 
     useEffect(() => {
@@ -124,15 +126,17 @@ export const CartProvider:FC = ({ children }) => {
         });
 
         dispatch({ type: '[Cart] - Update products in cart', payload: updatedProducts });
-
+        Cookie.set('cart', JSON.stringify( updatedProducts ));
     }
 
     const updateCartQuantity = ( product: ICartProduct ) => {
         dispatch({ type: '[Cart] - Change cart quantity', payload: product });
     }
 
-    const removeCartProduct = ( product: ICartProduct ) => {
-        dispatch({ type: '[Cart] - Remove product in cart', payload: product });
+    const removeCartProduct = ( producRemuvet: ICartProduct ) => {
+        const updatedProducts= state.cart.filter( product => !(product._id === producRemuvet._id && product.size === producRemuvet.size ))
+        dispatch({ type: '[Cart] - Remove product in cart', payload: updatedProducts });
+        Cookie.set('cart', JSON.stringify( updatedProducts ));
     }
 
     const updateAddress = ( address: ShippingAddress ) => {
