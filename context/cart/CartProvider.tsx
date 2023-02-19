@@ -1,169 +1,234 @@
-import { FC, useEffect, useReducer } from 'react';
+import { FC, useEffect, useReducer } from "react";
 import Cookie from 'js-cookie';
+import axios from 'axios';
 
-
-import { ICartProduct } from '../../interfaces';
-import { CartContext, cartReducer } from './';
+import { ICartProduct, IOrder, ShippingAddress } from "../../interfaces";
+import { CartContext, cartReducer } from "./";
+import { tesloApi } from '../../api';
 
 export interface CartState {
-    isLoaded: boolean;
-    isInitialState: boolean;
-    cart: ICartProduct[];
-    numberOfItems: number;
-    subTotal: number;
-    tax: number;
-    total: number;
+  isLoaded: boolean;
+  isInitialState: boolean;
+  cart: ICartProduct[];
+  numberOfItems: number;
+  subTotal: number;
+  tax: number;
+  total: number;
 
-    shippingAddress?: ShippingAddress;
+  shippingAddress?: ShippingAddress;
 }
-
-export interface ShippingAddress {
-    firstName: string;
-    lastName : string;
-    address  : string;
-    address2?: string;
-    zip      : string;
-    city     : string;
-    country  : string;
-    phone    : string;
-}
-
 
 const CART_INITIAL_STATE: CartState = {
-    isLoaded: false,
-    cart: [],
-    isInitialState: true,
-    numberOfItems: 0,
-    subTotal: 0,
-    tax: 0,
-    total: 0,
-    shippingAddress: undefined
-}
+  isLoaded: false,
+  cart: [],
+  isInitialState: true,
+  numberOfItems: 0,
+  subTotal: 0,
+  tax: 0,
+  total: 0,
+  shippingAddress: undefined,
+};
 
+export const CartProvider: FC = ({ children }) => {
+  const [state, dispatch] = useReducer(cartReducer, CART_INITIAL_STATE);
 
-export const CartProvider:FC = ({ children }) => {
+  // Efecto
+  useEffect(() => {
+    try {
+      const cookieProducts = Cookie.get("cart")
+        ? JSON.parse(Cookie.get("cart")!)
+        : [];
+      dispatch({
+        type: "[Cart] - LoadCart from cookies | storage",
+        payload: cookieProducts,
+      });
+    } catch (error) {
+      dispatch({
+        type: "[Cart] - LoadCart from cookies | storage",
+        payload: [],
+      });
+    }
+  }, []);
 
-    const [state, dispatch] = useReducer( cartReducer , CART_INITIAL_STATE );
+  useEffect(() => {
+    if (Cookie.get("firstName")) {
+      const shippingAddress = {
+        firstName: Cookie.get("firstName") || "",
+        lastName: Cookie.get("lastName") || "",
+        address: Cookie.get("address") || "",
+        address2: Cookie.get("address2") || "",
+        zip: Cookie.get("zip") || "",
+        city: Cookie.get("city") || "",
+        country: Cookie.get("country") || "",
+        phone: Cookie.get("phone") || "",
+      };
 
-    // Efecto
-    useEffect(() => {
-        try {
-            const cookieProducts = Cookie.get('cart') ? JSON.parse( Cookie.get('cart')! ): []
-            dispatch({ type: '[Cart] - LoadCart from cookies | storage', payload: cookieProducts });
-        } catch (error) {
-            dispatch({ type: '[Cart] - LoadCart from cookies | storage', payload: [] });
-        }
-    }, []);
+      dispatch({
+        type: "[Cart] - LoadAddress from Cookies",
+        payload: shippingAddress,
+      });
+    }
+  }, []);
 
+  useEffect(() => {
+    !state.isInitialState && Cookie.set("cart", JSON.stringify(state.cart));
+  }, [state.cart, state.isInitialState]);
 
-    useEffect(() => {
+  useEffect(() => {
+    const numberOfItems = state.cart.reduce(
+      (prev, current) => current.quantity + prev,
+      0
+    );
+    const subTotal = state.cart.reduce(
+      (prev, current) => current.price * current.quantity + prev,
+      0
+    );
+    const taxRate = Number(process.env.NEXT_PUBLIC_TAX_RATE || 0);
 
-        if ( Cookie.get('firstName')){
-            const shippingAddress = {
-                firstName : Cookie.get('firstName') || '',
-                lastName  : Cookie.get('lastName') || '',
-                address   : Cookie.get('address') || '',
-                address2  : Cookie.get('address2') || '',
-                zip       : Cookie.get('zip') || '',
-                city      : Cookie.get('city') || '',
-                country   : Cookie.get('country') || '',
-                phone     : Cookie.get('phone') || '',
-            }
-            
-            dispatch({ type:'[Cart] - LoadAddress from Cookies', payload: shippingAddress })
-        }
-    }, [])
-    
+    const orderSummary = {
+      numberOfItems,
+      subTotal,
+      tax: subTotal * taxRate,
+      total: subTotal * (taxRate + 1),
+    };
 
+    dispatch({ type: "[Cart] - Update order summary", payload: orderSummary });
+  }, [state.cart]);
 
-    
-    useEffect(() => {
-        !state.isInitialState && Cookie.set('cart', JSON.stringify( state.cart ));
-    }, [state.cart, state.isInitialState]);
+  const addProductToCart = (product: ICartProduct) => {
+    //! Nivel 1
+    // dispatch({ type: '[Cart] - Add Product', payload: product });
 
+    //! Nivel 2
+    // const productsInCart = state.cart.filter( p => p._id !== product._id && p.size !== product.size );
+    // dispatch({ type: '[Cart] - Add Product', payload: [...productsInCart, product] })
 
-    useEffect(() => {
-        
-        const numberOfItems = state.cart.reduce( ( prev, current ) => current.quantity + prev , 0 );
-        const subTotal = state.cart.reduce( ( prev, current ) => (current.price * current.quantity) + prev, 0 );
-        const taxRate =  Number(process.env.NEXT_PUBLIC_TAX_RATE || 0);
-    
-        const orderSummary = {
-            numberOfItems,
-            subTotal,
-            tax: subTotal * taxRate,
-            total: subTotal * ( taxRate + 1 )
-        }
+    //! Nivel Final
+    const productInCart = state.cart.some((p) => p._id === product._id);
+    if (!productInCart)
+      return dispatch({
+        type: "[Cart] - Update products in cart",
+        payload: [...state.cart, product],
+      });
 
-        dispatch({ type: '[Cart] - Update order summary', payload: orderSummary });
-    }, [state.cart]);
+    const productInCartButDifferentSize = state.cart.some(
+      (p) => p._id === product._id && p.size === product.size
+    );
+    if (!productInCartButDifferentSize)
+      return dispatch({
+        type: "[Cart] - Update products in cart",
+        payload: [...state.cart, product],
+      });
 
+    // Acumular
+    const updatedProducts = state.cart.map((p) => {
+      if (p._id !== product._id) return p;
+      if (p.size !== product.size) return p;
 
+      // Actualizar la cantidad
+      p.quantity += product.quantity;
+      return p;
+    });
 
-    const addProductToCart = ( product: ICartProduct ) => {
-        //! Nivel 1
-        // dispatch({ type: '[Cart] - Add Product', payload: product });
+    dispatch({
+      type: "[Cart] - Update products in cart",
+      payload: updatedProducts,
+    });
+    Cookie.set("cart", JSON.stringify(updatedProducts));
+  };
 
-        //! Nivel 2
-        // const productsInCart = state.cart.filter( p => p._id !== product._id && p.size !== product.size );
-        // dispatch({ type: '[Cart] - Add Product', payload: [...productsInCart, product] })
+  const updateCartQuantity = (product: ICartProduct) => {
+    dispatch({ type: "[Cart] - Change cart quantity", payload: product });
+  };
 
-        //! Nivel Final
-        const productInCart = state.cart.some( p => p._id === product._id );
-        if ( !productInCart ) return dispatch({ type: '[Cart] - Update products in cart', payload: [...state.cart, product ] })
+  const removeCartProduct = (producRemuvet: ICartProduct) => {
+    const updatedProducts = state.cart.filter(
+      (product) =>
+        !(
+          product._id === producRemuvet._id &&
+          product.size === producRemuvet.size
+        )
+    );
+    dispatch({
+      type: "[Cart] - Remove product in cart",
+      payload: updatedProducts,
+    });
+    Cookie.set("cart", JSON.stringify(updatedProducts));
+  };
 
-        const productInCartButDifferentSize = state.cart.some( p => p._id === product._id && p.size === product.size );
-        if ( !productInCartButDifferentSize ) return dispatch({ type: '[Cart] - Update products in cart', payload: [...state.cart, product ] })
+  const updateAddress = (address: ShippingAddress) => {
+    Cookie.set("firstName", address.firstName);
+    Cookie.set("lastName", address.lastName);
+    Cookie.set("address", address.address);
+    Cookie.set("address2", address.address2 || "");
+    Cookie.set("zip", address.zip);
+    Cookie.set("city", address.city);
+    Cookie.set("country", address.country);
+    Cookie.set("phone", address.phone);
 
-        // Acumular
-        const updatedProducts = state.cart.map( p => {
-            if ( p._id !== product._id ) return p;
-            if ( p.size !== product.size ) return p;
+    dispatch({ type: "[Cart] - Update Address", payload: address });
+  };
 
-            // Actualizar la cantidad
-            p.quantity += product.quantity;
-            return p;
-        });
-
-        dispatch({ type: '[Cart] - Update products in cart', payload: updatedProducts });
-        Cookie.set('cart', JSON.stringify( updatedProducts ));
+  const createOrder = async (): Promise<{
+    hasError: boolean;
+    message: string;
+  }> => {
+    if (!state.shippingAddress) {
+      throw new Error("No hay dirección de entrega");
     }
 
-    const updateCartQuantity = ( product: ICartProduct ) => {
-        dispatch({ type: '[Cart] - Change cart quantity', payload: product });
+    const body: IOrder = {
+      orderItems: state.cart.map((p) => ({
+        ...p,
+        size: p.size!,
+      })),
+      shippingAddress: state.shippingAddress,
+      numberOfItems: state.numberOfItems,
+      subTotal: state.subTotal,
+      tax: state.tax,
+      total: state.total,
+      isPaid: false,
+    };
+
+    try {
+      const { data } = await tesloApi.post<IOrder>("/orders", body);
+
+      dispatch({ type: "[Cart] - Order complete" });
+
+      return {
+        hasError: false,
+        message: data._id!,
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        return {
+          hasError: true,
+          message: error.response?.data.message,
+        };
+      }
+      return {
+        hasError: true,
+        message: "Error no controlado, hable con el administrador",
+      };
     }
+  };
 
-    const removeCartProduct = ( producRemuvet: ICartProduct ) => {
-        const updatedProducts= state.cart.filter( product => !(product._id === producRemuvet._id && product.size === producRemuvet.size ))
-        dispatch({ type: '[Cart] - Remove product in cart', payload: updatedProducts });
-        Cookie.set('cart', JSON.stringify( updatedProducts ));
-    }
+  return (
+    <CartContext.Provider
+      value={{
+        ...state,
 
-    const updateAddress = ( address: ShippingAddress ) => {
-        Cookie.set('firstName',address.firstName);
-        Cookie.set('lastName',address.lastName);
-        Cookie.set('address',address.address);
-        Cookie.set('address2',address.address2 || '');
-        Cookie.set('zip',address.zip);
-        Cookie.set('city',address.city);
-        Cookie.set('country',address.country);
-        Cookie.set('phone',address.phone);
+        // Methods
+        addProductToCart,
+        removeCartProduct,
+        updateCartQuantity,
+        updateAddress,
 
-        dispatch({ type: '[Cart] - Update Address', payload: address });
-    }
-
-
-    return (
-        <CartContext.Provider value={{
-            ...state,
-
-            // Methods
-            addProductToCart,
-            removeCartProduct,
-            updateCartQuantity,
-            updateAddress,
-        }}>
-            { children }
-        </CartContext.Provider>
-    )
+        // Orders
+        createOrder,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 };
