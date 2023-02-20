@@ -1,7 +1,18 @@
 import { useContext, useState } from 'react';
 
 import { Box, Divider, Drawer, IconButton, Input, InputAdornment, List, ListItem, ListItemIcon, ListItemText, ListSubheader } from "@mui/material"
-import { AccountCircleOutlined, AdminPanelSettings, CategoryOutlined, ConfirmationNumberOutlined, EscalatorWarningOutlined, FemaleOutlined, LoginOutlined, MaleOutlined, SearchOutlined, VpnKeyOutlined } from "@mui/icons-material"
+import AccountCircleOutlined from "@mui/icons-material/AccountCircleOutlined"
+import AdminPanelSettings from "@mui/icons-material/AdminPanelSettings"
+import CategoryOutlined from "@mui/icons-material/CategoryOutlined"
+import ConfirmationNumberOutlined from "@mui/icons-material/ConfirmationNumberOutlined"
+import DashboardOutlined from "@mui/icons-material/DashboardOutlined"
+import EscalatorWarningOutlined from "@mui/icons-material/EscalatorWarningOutlined"
+import FemaleOutlined from "@mui/icons-material/FemaleOutlined"
+import LoginOutlined from "@mui/icons-material/LoginOutlined"
+import MaleOutlined from "@mui/icons-material/MaleOutlined"
+import SearchOutlined from "@mui/icons-material/SearchOutlined"
+import VpnKeyOutlined from "@mui/icons-material/VpnKeyOutlined"
+
 
 import { UiContext, AuthContext } from '../../context';
 import { useRouter } from 'next/router';
@@ -140,12 +151,21 @@ export const SideMenu = () => {
 
 
 
-                {/* Admin */}
-                {
+               {/* Admin */}
+               {
                     user?.role === 'admin' && (
                         <>
                             <Divider />
                             <ListSubheader>Admin Panel</ListSubheader>
+
+                            <ListItem 
+                                button
+                                onClick={ () => navigateTo('/admin/') }>
+                                <ListItemIcon>
+                                    <DashboardOutlined />
+                                </ListItemIcon>
+                                <ListItemText primary={'Dashboard'} />
+                            </ListItem>
 
                             <ListItem button>
                                 <ListItemIcon>
@@ -153,14 +173,18 @@ export const SideMenu = () => {
                                 </ListItemIcon>
                                 <ListItemText primary={'Productos'} />
                             </ListItem>
-                            <ListItem button>
+                            <ListItem 
+                                button
+                                onClick={ () => navigateTo('/admin/orders') }>
                                 <ListItemIcon>
                                     <ConfirmationNumberOutlined/>
                                 </ListItemIcon>
                                 <ListItemText primary={'Ordenes'} />
                             </ListItem>
 
-                            <ListItem button>
+                            <ListItem 
+                                button
+                                onClick={ () => navigateTo('/admin/users') }>
                                 <ListItemIcon>
                                     <AdminPanelSettings/>
                                 </ListItemIcon>

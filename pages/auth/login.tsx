@@ -4,7 +4,7 @@ import NextLink from 'next/link';
 import { signIn, getSession, getProviders } from 'next-auth/react';
 
 import { Box, Button, Chip, Divider, Grid, Link, TextField, Typography } from '@mui/material';
-import { ErrorOutline } from '@mui/icons-material';
+import ErrorOutline from '@mui/icons-material/ErrorOutline';
 import { useForm } from 'react-hook-form';
 
 import { AuthLayout } from '../../components/layouts'

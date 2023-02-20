@@ -16,7 +16,7 @@ export default NextAuth({
         email: { label: 'Correo:', type: 'email', placeholder: 'correo@google.com'  },
         password: { label: 'Contraseña:', type: 'password', placeholder: 'Contraseña'  },
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<any> {
         // console.log({credentials})
         // return { name: 'Juan', correo: 'juan@google.com', role: 'admin' };
 
@@ -80,7 +80,7 @@ export default NextAuth({
     async session({ session, token, user }){
     //  console.log({ session, token, user });
 
-      session.accessToken = token.accessToken;
+      (session as any).accessToken = token.accessToken;
       session.user = token.user as any;
 
       return session;
