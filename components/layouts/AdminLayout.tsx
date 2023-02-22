@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import { Box, Typography } from '@mui/material';
 import { AdminNavbar } from '../admin';
 
@@ -9,6 +9,7 @@ interface Props {
     title: string;
     subTitle: string;
     icon?: JSX.Element;
+    children: ReactNode;
 }
 
 export const AdminLayout:FC<Props> = ({ children, title, subTitle, icon }) => {

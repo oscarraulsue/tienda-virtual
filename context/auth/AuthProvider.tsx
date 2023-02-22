@@ -1,4 +1,4 @@
-import { FC, useReducer, useEffect } from 'react';
+import { FC, useReducer, useEffect,  ReactNode} from 'react';
 import { useRouter } from 'next/router';
 import { useSession, signOut } from 'next-auth/react';
 
@@ -13,6 +13,7 @@ import { IUser } from '../../interfaces';
 export interface AuthState {
     isLoggedIn: boolean;
     user?: IUser;
+    children?: ReactNode;
 }
 
 
@@ -21,8 +22,7 @@ const AUTH_INITIAL_STATE: AuthState = {
     user: undefined,
 }
 
-
-export const AuthProvider:FC = ({ children }) => {
+    export const AuthProvider:FC<{ children: ReactNode;}> = ({ children }) => {
 
     const [state, dispatch] = useReducer( authReducer, AUTH_INITIAL_STATE );
     const { data, status } = useSession();

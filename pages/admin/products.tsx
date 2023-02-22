@@ -1,5 +1,7 @@
 import NextLink from 'next/link';
-import { AddOutlined, CategoryOutlined } from '@mui/icons-material';
+import AddOutlined from '@mui/icons-material/AddOutlined';
+import CategoryOutlined from '@mui/icons-material/CategoryOutlined';
+
 import { Box, Button, CardMedia, Grid, Link } from '@mui/material'
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import useSWR from 'swr';
